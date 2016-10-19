@@ -43,7 +43,7 @@ Video shows a Windows 10 lock screen (fresh install) connected to an Android dev
 
 Considerations
 ------
-- For Android v4.? use /storage/emulated/0/[*] instead of /sdcard
+- For Android v4.? use /storage/emulated/0/[*] instead of /sdcard/[*]
   
 
 Credits
