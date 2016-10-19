@@ -35,7 +35,9 @@ root@kali:/# bash $DIR/stopTether.sh
 
 Results
 ------
-Video shows a Windows 10 lock screen (fresh install) connected to an Android device running Responder.py. Host laptop is not connected to any other network (wifi or ethernet).
+Video shows a Windows 10 lock screen (fresh install) connected to an Android device running Responder.py. Host laptop is not connected to any other network (wifi or ethernet)
+
+
 [![Video](https://img.youtube.com/vi/Wdavavcon68/0.jpg)](https://www.youtube.com/watch?v=Wdavavcon68)
 
 
