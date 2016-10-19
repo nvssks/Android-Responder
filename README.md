@@ -50,7 +50,6 @@ Credits
 ------
 * [Responder](https://github.com/SpiderLabs/Responder)
 * [Responder Latest](https://github.com/lgandx/Responder)
-* https://room362.com/post/2016/snagging-creds-from-locked-machines/
+* [@mubix](https://twitter.com/mubix), https://room362.com/post/2016/snagging-creds-from-locked-machines/
 * [@whitslack](http://forum.xda-developers.com/member.php?u=2684937), http://forum.xda-developers.com/showthread.php?t=2127850
-* [@mubix](https://room362.com/post/2016/snagging-creds-from-locked-machines/)
 * Special thanks: [@ikoz](https://twitter.com/ikoz), [@xtsop](https://twitter.com/xtsop)
