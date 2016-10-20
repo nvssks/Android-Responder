@@ -18,7 +18,7 @@ git submodule update --init --recursive
 ```
 Copy everything in Android - Responder needs to be in the same $DIR as the scripts
 
-* Android:
+* Android with qPython:
 ```
 ~$ su -c sh $DIR/startTether.sh
 ~$ su -c sh $DIR/stopTether.sh
@@ -30,6 +30,7 @@ root@kali:/# bash $DIR/startTether.sh
 root@kali:/# bash $DIR/stopTether.sh
 ```
 
+<b><i>Note</i></b>: Due to some limitations on older Android environments, startTether.sh needs to be stoped with Ctrl+C before running stopTether.sh
 
 Results
 ------
