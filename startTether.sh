@@ -10,6 +10,72 @@ dirname=$0
 cd "${dirname%/*}"
 curdir=`pwd`
 
+# Finds the correct PATH for python
+# Takes Parameter for qPython sh executable -Forces Android non-PIE/PIE version of qPython
+IdentifyPython () {
+	# Identify Python interpreter
+	Python=`which python 2>/dev/null`
+
+	# Check for errors
+	if [ $? -ne 0 ]; then
+	#which does not exist or something happened
+	        if [ -e "/usr/bin/python" ]; then
+        	        Python="/usr/bin/python"
+        	fi
+	fi
+
+	# Python not found in PATH
+	# Check if qPython application is installed
+	if [ -z $Python ];then
+        	qPythonPackages=`pm list packages qpython`
+        	if [ -z "$qPythonPackages" ]; then
+        	        echo "Python not found please install qPython"
+        	        exit 1;
+        	else
+        	        # Identify android version and call correct script (Android 5+ needs PIE bypass)
+        	        qPythonPackages=(${qPythonPackages[@]}) #Split it by lines
+        	        qPythonPackage=${qPythonPackages[0]}   #Read first line
+			#Test if qPython3 is installed
+                        case $qPythonPackage in *"qpy3"*)
+                                echo "Responder does not run with Python v3.0"
+                                #Checking if other qPython installation exists 
+                                qPythonPackage=${qPythonPackages[1]}
+                                if [[ -z $qPythonPackage ]]; then
+                                        echo "Please install qPython for Python 2.7"
+                                        exit 1
+				else
+					echo "Trying with $qPythonPackage" 
+                                fi
+                                ;;
+                        *);;
+                        esac
+
+	               	qPython=${qPythonPackage#*':'}        # Read qPython path after "package:" (cut -d: -f2) 
+                	
+			AndroidVersion=`getprop ro.build.version.release`
+			#If qpython script is passed as a parameter then use it
+			#TODO: Improve PIE check
+			if [ ! -z "$1" ]; then
+				qPythonsh="$1"
+			elif [[ ${AndroidVersion:0:1} -ge 5 ]] && [[ -z $1 ]]; then
+				qPythonsh="qpython-android5.sh"
+			else			
+	        		qPythonsh="qpython.sh"
+			fi
+			
+			#If qPython exist in /data/user/0 then use it
+			#Else use default qPython installation in /data/data
+              		if [[ -e "/data/user/0/$qPython/files/bin/$qPythonsh" ]]; then
+                        	Python="sh /data/user/0/$qPython/files/bin/$qPythonsh"
+                	elif [[ -e "/data/data/$qPython/files/bin/$qPythonsh" ]]; then
+                        	Python="sh /data/data/$qPython/files/bin/$qPythonsh"
+                	else
+                        	echo "Something went wrong: qPython not found in $Python"
+                	fi
+        	fi
+	fi
+}
+
 # Identify temp directory
 if [ -d "/tmp" ]; then
   TEMP="/tmp"
@@ -25,19 +91,21 @@ fi
 # Check USB state
 # Save USB current configuration in temp dir
 prevconfig=`getprop sys.usb.config`
-if [[ $prevconfig == *"rndis"* ]] ; then
-	# Skip re-setting usb to rndis if already set.
-	echo 'Tethering seems to be active ... continuing without restarting it' >&2
-elif [[ ! -z $prevconfig ]]; then
-	# Save configuration and set USB to rnids mode
-	echo "${prevconfig}" > $TEMP/usb_tether_prevconfig
-	setprop sys.usb.config 'rndis,adb'
-	echo "Enabling Tethering"
-	# Wait for usb interface to change state
-	until [ "`getprop sys.usb.state`" = 'rndis,adb' ] ; do sleep 1 ; done
-else
-	echo "Cannot determine usb state:" `getprop sys.usb.state`
-fi
+case $prevconfig in 
+        *"rndis"*)
+                # Skip re-setting usb to rndis if already set.
+                echo 'Tethering seems to be active ... continuing without restarting it' >&2
+                ;;
+        *) 
+                # Save configuration and set USB to rnids mode
+                echo "${prevconfig}" > $TEMP/usb_tether_prevconfig
+                setprop sys.usb.config 'rndis,adb'
+                echo "Enabling Tethering"
+                # Wait for usb interface to change state
+                until [ "`getprop sys.usb.state`" = 'rndis,adb' ] ; do sleep 1 ; done
+        ;;
+esac
+
 sleep 1
 
 # Identify Tethering interface
@@ -106,42 +174,10 @@ dnsmasq --pid-file=$TEMP/usb_tether_dnsmasq.pid \
 
 sleep 1
 
+#Identify Python executable
+IdentifyPython
+
 # Start Responder
-echo "Starting Responder"
-
-# Identify Python interpreter
-Python=`which python 2>/dev/null`
-
-# Check for errors
-if [ $? -ne 0 ]; then
-#which does not exist or something happened
-	if [ -e "/usr/bin/python" ]; then
-		Python="/usr/bin/python"
-	fi
-fi
-
-# Python not found in PATH
-# Check if qPython application is installed
-if [ -z $Python ];then	
-	qPythonPackage=`pm list packages qpython`
-	if [ -z $qPythonPackage ]; then
-		echo "Python not found please install qPython"
-		exit 1;
-	else
-		# Identify android version and call correct script (Android 5+ needs PIE bypass)
-		qPython=${qPythonPackage:8:128} # | cut -d: -f2
-		AndroidVersion=`getprop ro.build.version.release`
-		if [[ ${AndroidVersion:0:1} -ge 5 ]]; then
-			qPythonsh="qpython-android5.sh"
-		else
-			qPythonsh="qpython.sh"	
-		fi
-		# Set Python interpreter to qPython 
-		Python="sh /data/data/$qPython/files/bin/$qPythonsh"
-	fi
-fi
-
-# Check if Responder directory exists
 if [ ! -d "$curdir/Responder" ]; then
 	echo "Responder directory missing: $curdir/Responder" 
 	exit 1
@@ -149,5 +185,14 @@ else
 # Start Responder and listen for events. Ctrl-C to exit
 	echo "Starting Responder.py, Ctrl-C to exit"
 	$Python $curdir/Responder/Responder.py -I $TetherIface -f -w -r -d -F 
-	echo $! > $TEMP/responder.pid
+	#If Python exited with error, try the non-PIE/PIE version of qPython script
+	if [ $? -ne 0 ]; then
+		if [ $qPythonsh == "qpython.sh" ]; then
+			IdentifyPython "qpython-android5.sh"
+		elif [ $qPythonsh == "qpython-android5.sh" ]; then
+			IdentifyPython "qpython.sh"
+		fi
+		$Python $curdir/Responder/Responder.py -I $TetherIface -f -w -r -d -F
+	fi
+        echo $! > $TEMP/responder.pid
 fi
