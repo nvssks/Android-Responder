@@ -36,7 +36,7 @@ IdentifyPython () {
         	        qPythonPackages=(${qPythonPackages[@]}) #Split it by lines
         	        qPythonPackage=${qPythonPackages[0]}   #Read first line
 			#Test if qPython3 is installed
-                        case $qPythonPackage in *"qpy3"*)
+                        case $qPythonPackage in *"qpy3"*) #Python package list contains qPython3
                                 echo "Responder does not run with Python v3.0"
                                 #Checking if other qPython installation exists 
                                 qPythonPackage=${qPythonPackages[1]}
@@ -47,10 +47,10 @@ IdentifyPython () {
 					echo "Trying with $qPythonPackage" 
                                 fi
                                 ;;
-                        *);;
+                        *);;	#Default: Do nothing
                         esac
 
-	               	qPython=${qPythonPackage#*':'}        # Read qPython path after "package:" (cut -d: -f2) 
+	               	qPython=${qPythonPackage#*':'}        # Get qPython path after "package:" ~ (cut -d: -f2) 
                 	
 			AndroidVersion=`getprop ro.build.version.release`
 			#If qpython script is passed as a parameter then use it
@@ -92,18 +92,18 @@ fi
 # Save USB current configuration in temp dir
 prevconfig=`getprop sys.usb.config`
 case $prevconfig in 
-        *"rndis"*)
+        *"rndis"*)	#USB config already contains rndis
                 # Skip re-setting usb to rndis if already set.
                 echo 'Tethering seems to be active ... continuing without restarting it' >&2
                 ;;
-        *) 
+        *) 		#Default: Set usb config to rndis
                 # Save configuration and set USB to rnids mode
                 echo "${prevconfig}" > $TEMP/usb_tether_prevconfig
                 setprop sys.usb.config 'rndis,adb'
                 echo "Enabling Tethering"
                 # Wait for usb interface to change state
                 until [ "`getprop sys.usb.state`" = 'rndis,adb' ] ; do sleep 1 ; done
-        ;;
+        	;;
 esac
 
 sleep 1
@@ -117,6 +117,7 @@ else
         echo "Please enter Tetehring interface:"
         read TetherIface
 fi
+echo "Using Tethering interface: $TetherIface"
 
 sleep 1
 
