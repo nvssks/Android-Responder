@@ -187,9 +187,9 @@ else
 	$Python $curdir/Responder/Responder.py -I $TetherIface -f -w -r -d -F 
 	#If Python exited with error, try the non-PIE/PIE version of qPython script
 	if [ $? -ne 0 ]; then
-		if [ $qPythonsh == "qpython.sh" ]; then
+		if [ "$qPythonsh" = "qpython.sh" ]; then
 			IdentifyPython "qpython-android5.sh"
-		elif [ $qPythonsh == "qpython-android5.sh" ]; then
+		elif [ "$qPythonsh" = "qpython-android5.sh" ]; then
 			IdentifyPython "qpython.sh"
 		fi
 		$Python $curdir/Responder/Responder.py -I $TetherIface -f -w -r -d -F
